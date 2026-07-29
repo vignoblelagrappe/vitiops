@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>VitiOps</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-32.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VitiOps">
+<meta name="theme-color" content="#5B2A3D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F2F4EE; --surface:#FFFFFF; --surface-soft:#EAEEE3;
+    --ink:#232922; --ink-soft:#5B6355;
+    --wine:#5B2A3D; --wine-dark:#3E1C29; --wine-tint:#F1E4E9;
+    --vine:#4E6B34; --vine-tint:#E7EEDD;
+    --gold:#A67C2E; --gold-tint:#F3E9D3;
+    --brick:#A23E3E; --brick-tint:#F4E1DF;
+    --border:#DAD9C9; --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  #app{max-width:640px;margin:0 auto;min-height:100vh;background:var(--bg);padding-bottom:48px;}
+
+  .topbar{position:sticky;top:0;z-index:40;background:var(--wine);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;box-shadow:0 2px 8px rgba(0,0,0,.12);}
+  .brandline{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#E7C9D3;font-weight:600;margin-bottom:1px;}
+  .topbar h1{font-size:20px;color:#fff;letter-spacing:.2px;display:flex;align-items:baseline;gap:8px;}
+  .topbar h1 .ver{font-size:11px;color:#E7C9D3;font-weight:500;font-family:'IBM Plex Mono',monospace;}
+  .menu-btn{background:rgba(255,255,255,.14);border:none;color:#fff;width:40px;height:40px;border-radius:8px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .menu-btn:active{background:rgba(255,255,255,.28);}
+
+  .menu-overlay{position:fixed;inset:0;background:rgba(35,41,34,.5);z-index:50;display:none;}
+  .menu-overlay.open{display:block;}
+  .menu-panel{position:absolute;top:0;right:0;width:82%;max-width:320px;height:100%;background:var(--surface);box-shadow:-6px 0 24px rgba(0,0,0,.2);padding:18px 0;overflow-y:auto;}
+  .menu-item{display:flex;align-items:center;gap:12px;padding:14px 20px;font-size:15px;font-weight:500;color:var(--ink);cursor:pointer;border-left:3px solid transparent;}
+  .menu-item .ic{width:22px;text-align:center;color:var(--wine);}
+  .menu-item.active{background:var(--wine-tint);border-left-color:var(--wine);color:var(--wine-dark);}
+  .menu-item:active{background:var(--surface-soft);}
+  .menu-title{padding:10px 20px 4px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-weight:600;}
+
+  main{padding:16px 14px 24px;}
+  .view-title{font-size:22px;margin-bottom:2px;}
+  .view-sub{color:var(--ink-soft);font-size:13px;margin-bottom:16px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px;}
+  .card h3{font-size:15px;margin-bottom:10px;color:var(--wine-dark);}
+  .row{display:flex;gap:8px;flex-wrap:wrap;}
+  .field{margin-bottom:10px;flex:1;min-width:120px;}
+  .field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:4px;font-weight:500;}
+  select,input[type=text],input[type=number],input[type=date],input[type=tel],input[type=email],textarea{
+    width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--ink);font-family:inherit;font-size:14px;
+  }
+  select:focus,input:focus,textarea:focus{outline:2px solid var(--wine);outline-offset:1px;}
+  textarea{resize:vertical;min-height:56px;}
+  .checkline{display:flex;align-items:center;gap:8px;font-size:13.5px;margin-bottom:10px;}
+  .checkline input{width:18px;height:18px;}
+
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:8px;border:none;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .btn-primary{background:var(--wine);color:#fff;}
+  .btn-primary:active{background:var(--wine-dark);}
+  .btn-ghost{background:var(--surface-soft);color:var(--ink);}
+  .btn-ghost:active{background:var(--border);}
+  .btn-danger{background:var(--brick-tint);color:var(--brick);}
+  .btn-sm{padding:6px 10px;font-size:12px;}
+  .btn-block{width:100%;justify-content:center;}
+  .btn-row{display:flex;gap:8px;margin-top:6px;}
+
+  .line-item{background:var(--surface-soft);border-radius:8px;padding:10px;margin-bottom:8px;position:relative;}
+  .line-item .rm{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--brick);font-size:16px;cursor:pointer;}
+
+  .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;}
+  .pill-vine{background:var(--vine-tint);color:var(--vine);}
+  .pill-gold{background:var(--gold-tint);color:var(--gold);}
+  .pill-wine{background:var(--wine-tint);color:var(--wine-dark);}
+  .pill-brick{background:var(--brick-tint);color:var(--brick);}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--border);}
+  th{color:var(--ink-soft);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;}
+  .num{text-align:right;font-family:'IBM Plex Mono',monospace;}
+  td input, td select{padding:5px 6px;font-size:12.5px;}
+
+  .empty{text-align:center;padding:28px 10px;color:var(--ink-soft);}
+  .empty .ic{font-size:28px;margin-bottom:8px;}
+
+  .tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px;}
+  .tab{padding:7px 12px;border-radius:99px;font-size:12.5px;font-weight:600;background:var(--surface-soft);color:var(--ink-soft);white-space:nowrap;cursor:pointer;border:1px solid transparent;}
+  .tab.active{background:var(--wine);color:#fff;}
+
+  .row-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:8px 0;}
+  .row-cell{padding:6px 2px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:600;font-family:'IBM Plex Mono',monospace;background:var(--surface-soft);color:var(--ink-soft);border:1px solid var(--border);cursor:pointer;user-select:none;}
+  .row-cell.done{background:var(--vine);color:#fff;border-color:var(--vine);}
+  .cepage-group{margin-bottom:12px;}
+  .cepage-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+  .cepage-head .name{font-weight:600;font-size:12.5px;color:var(--wine-dark);}
+
+  .bar-wrap{background:var(--surface-soft);border-radius:6px;height:8px;overflow:hidden;margin-top:4px;}
+  .bar-fill{background:var(--vine);height:100%;border-radius:6px;}
+
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;}
+  .kpi .val{font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:var(--wine-dark);}
+  .kpi .lbl{font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
+
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;z-index:80;opacity:0;pointer-events:none;transition:opacity .25s;}
+  .toast.show{opacity:1;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(35,41,34,.55);z-index:70;display:none;align-items:center;justify-content:center;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:#fff;border-radius:var(--radius);padding:16px;max-width:420px;width:100%;max-height:85vh;overflow-y:auto;}
+  .modal img{width:100%;border-radius:8px;}
+  .modal-close{float:right;background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-soft);}
+
+  .divider{height:1px;background:var(--border);margin:14px 0;}
+  .muted{color:var(--ink-soft);font-size:12.5px;}
+  a.linklike{color:var(--wine);text-decoration:underline;cursor:pointer;}
+  .note-box{background:var(--gold-tint);color:var(--gold);border-radius:8px;padding:8px 10px;font-size:12.5px;margin-top:8px;}
+  .sub-line-item{background:#fff;border:1px dashed var(--border);border-radius:8px;padding:10px;margin-bottom:8px;position:relative;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalBody"></div></div>
+
+<script>
+/* ---------------------------------------------------------
+   VitiOps — opérations viticoles : heures / tâches / phyto / km
+   Vignoble : La Grappe
+--------------------------------------------------------- */
+
+const APP_NAME='VitiOps';
+const APP_VERSION='1.0';
+const VIGNOBLE_NOM='Vignoble La Grappe';
+const TRANSPORT_VIGNOBLE_MIN = 80;
+const TRANSPORT_VIGNOBLE_H = TRANSPORT_VIGNOBLE_MIN/60;
+const AUTRE_PERSONNE = '__autre__';
+const AUTRE_TACHE = '__autre_tache__';
+
+/* ---------- IndexedDB (stockage local autonome, hors ligne) ---------- */
+const IDB_NAME='vitiops-db', IDB_VERSION=1, IDB_STORE='kv';
+function idbOpen(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded=()=>{ if(!req.result.objectStoreNames.contains(IDB_STORE)) req.result.createObjectStore(IDB_STORE); };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function idbGet(key){
+  const db=await idbOpen();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(IDB_STORE,'readonly');
+    const req=tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function idbSet(key,value){
+  const db=await idbOpen();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(IDB_STORE,'readwrite');
+    tx.objectStore(IDB_STORE).put(value,key);
+    tx.oncomplete=()=>resolve(true);
+    tx.onerror=()=>reject(tx.error);
+  });
+}
+async function idbDelete(key){
+  const db=await idbOpen();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(IDB_STORE,'readwrite');
+    tx.objectStore(IDB_STORE).delete(key);
+    tx.oncomplete=()=>resolve(true);
+    tx.onerror=()=>reject(tx.error);
+  });
+}
+
+const VIEWS = [
+  {id:'jour', label:'Journée', icon:'✎', group:'Saisie'},
+  {id:'phyto', label:'Traitements', icon:'⚗', group:'Saisie'},
+  {id:'journal', label:'Observations & stades', icon:'✦', group:'Saisie'},
+  {id:'rangs', label:'Avancement par rang', icon:'▦', group:'Suivi'},
+  {id:'echeances', label:'Échéancier', icon:'◷', group:'Suivi'},
+  {id:'equipe', label:'Équipe', icon:'◒', group:'Suivi'},
+  {id:'dashboard', label:'Tableau de bord', icon:'▲', group:'Suivi'},
+  {id:'referentiels', label:'Référentiels', icon:'⚙', group:'Réglages'},
+  {id:'donnees', label:'Données (export)', icon:'⇩', group:'Réglages'},
+];
+
+let DB = { referentiels:null, entries:[], observations:[], traitements:[], echeances:[] };
+let currentView = 'jour';
+
+function defaultReferentiels(){
+  function makeRangs(suffix, groups){
+    const out=[];
+    groups.forEach(g=>{ for(let i=g.from;i<=g.to;i++) out.push({id:uid(), nom:`${i}${suffix}`, cepage:g.cepage}); });
+    return out;
+  }
+  return {
+    categories:['Entretien vigne','Récolte','Infrastructure','Administratif'],
+    taches:[
+      {id:'t1',nom:'Taille',categorie:'Entretien vigne',parRang:true},
+      {id:'t2',nom:'Attachage',categorie:'Entretien vigne',parRang:true},
+      {id:'t3',nom:'Épamprage',categorie:'Entretien vigne',parRang:true},
+      {id:'t4',nom:'Relevage',categorie:'Entretien vigne',parRang:true},
+      {id:'t5',nom:'Effeuillage',categorie:'Entretien vigne',parRang:true},
+      {id:'t6',nom:'Rognage',categorie:'Entretien vigne',parRang:false},
+      {id:'t7',nom:'Désherbage',categorie:'Entretien vigne',parRang:false},
+      {id:'t8',nom:'Vendange',categorie:'Récolte',parRang:false},
+      {id:'t9',nom:'Entretien machinerie',categorie:'Infrastructure',parRang:false},
+      {id:'t10',nom:'Réparations',categorie:'Infrastructure',parRang:false},
+      {id:'t11',nom:'Comptabilité',categorie:'Administratif',parRang:false},
+      {id:'t12',nom:'Planification',categorie:'Administratif',parRang:false},
+    ],
+    personnes:[
+      {id:'p1',nom:'Guy (bénévole)',telephone:'',courriel:''},
+      {id:'p2',nom:'Diane (bénévole)',telephone:'',courriel:''},
+      {id:'p3',nom:'Employé saisonnier',telephone:'',courriel:''},
+    ],
+    parcelles:[
+      {id:'pa1',nom:'Parcelle A',rangs:makeRangs('-A',[{cepage:'Cépage A',from:1,to:5},{cepage:'Cépage B',from:6,to:10}])},
+      {id:'pa2',nom:'Parcelle B',rangs:makeRangs('-B',[{cepage:'Cépage A',from:1,to:4},{cepage:'Cépage B',from:5,to:8}])},
+    ],
+    cepages:['Cépage A','Cépage B'],
+    typesTransport:[{id:'tt1',nom:'Livraison'},{id:'tt2',nom:'Achat de fournitures'}],
+    produits:[{id:'pr1',nom:'Produit A',intervalleJours:10},{id:'pr2',nom:'Produit B',intervalleJours:14}],
+    stadesPheno:['Débourrement','Feuilles étalées','Grappes visibles','Floraison','Nouaison','Fermeture de la grappe','Véraison','Maturité / récolte'],
+    distanceVignobleKm:20,
+  };
+}
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function todayISO(){const d=new Date();return d.toISOString().slice(0,10);}
+function fmtDate(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+function fmtMoisJour(mj){ if(!mj) return ''; const [m,d]=mj.split('-'); return `${d}/${m}`; }
+function yearOf(iso){return iso ? iso.slice(0,4) : '';}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+function esc(s){return (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function tacheDisplayName(l, ref){
+  ref = ref || DB.referentiels;
+  if(l.tacheId===AUTRE_TACHE) return l.tacheNomAutre || 'Autre';
+  const t=ref.taches.find(x=>x.id===l.tacheId);
+  return t? t.nom : '—';
+}
+function tacheCategorie(l, ref){
+  ref = ref || DB.referentiels;
+  if(l.tacheId===AUTRE_TACHE) return 'Autre';
+  const t=ref.taches.find(x=>x.id===l.tacheId);
+  return t? t.categorie : '';
+}
+function rangGroups(parcelle){
+  const order=[]; const map={};
+  (parcelle?.rangs||[]).forEach(r=>{
+    const key = r.cepage || '';
+    if(!map[key]){ map[key]=[]; order.push(key); }
+    map[key].push(r);
+  });
+  return order.map(key=>({cepage:key, rangs:map[key]}));
+}
+function rangsLabel(parcelle, rangIds){
+  if(!parcelle || !rangIds || !rangIds.length) return '';
+  const byId={}; parcelle.rangs.forEach(r=>byId[r.id]=r.nom);
+  return rangIds.map(id=>byId[id]).filter(Boolean).join(', ');
+}
+function transportHoursForEntry(e){
+  return (e.auVignoble? TRANSPORT_VIGNOBLE_H:0) + (e.transport||[]).reduce((s,l)=>s+(+l.heures||0),0);
+}
+function orderedPersonnes(){
+  const lastUsed={};
+  DB.entries.forEach(e=>{
+    (e.personnes||[]).forEach(l=>{
+      if(l.personneId && l.personneId!==AUTRE_PERSONNE){
+        if(!lastUsed[l.personneId] || lastUsed[l.personneId] < e.date) lastUsed[l.personneId]=e.date;
+      }
+    });
+  });
+  return [...DB.referentiels.personnes].sort((a,b)=>{
+    const da=lastUsed[a.id]||''; const db=lastUsed[b.id]||'';
+    if(da!==db) return db.localeCompare(da);
+    return 0;
+  });
+}
+
+/* ---------- storage ---------- */
+async function loadDB(){
+  const keys=['referentiels','entries','observations','traitements','echeances'];
+  await Promise.all(keys.map(async k=>{
+    try{
+      const v=await idbGet(k);
+      DB[k]= v!==undefined ? v : (k==='referentiels'? defaultReferentiels():[]);
+    }catch(e){
+      DB[k]= k==='referentiels'? defaultReferentiels():[];
+    }
+  }));
+}
+async function save(key){
+  try{ await idbSet(key, DB[key]); }
+  catch(e){ showToast("Erreur d'enregistrement — réessaie"); }
+}
+
+/* ---------- render shell ---------- */
+function render(){
+  const app=document.getElementById('app');
+  app.innerHTML = `
+    <div class="topbar">
+      <div>
+        <div class="brandline">${esc(VIGNOBLE_NOM)}</div>
+        <h1>${APP_NAME} <span class="ver">v${APP_VERSION}</span></h1>
+      </div>
+      <button class="menu-btn" onclick="toggleMenu(true)">☰</button>
+    </div>
+    <main id="main"></main>
+  `;
+  renderView();
+}
+function toggleMenu(open){
+  document.getElementById('menuOverlay')?.remove();
+  if(open){
+    const groups={};
+    VIEWS.forEach(v=>{(groups[v.group]=groups[v.group]||[]).push(v);});
+    let html=`<div class="menu-overlay open" id="menuOverlay" onclick="if(event.target===this) toggleMenu(false)">
+      <div class="menu-panel">`;
+    Object.keys(groups).forEach(g=>{
+      html+=`<div class="menu-title">${esc(g)}</div>`;
+      groups[g].forEach(v=>{
+        html+=`<div class="menu-item ${v.id===currentView?'active':''}" onclick="goTo('${v.id}')">
+          <span class="ic">${v.icon}</span>${esc(v.label)}
+        </div>`;
+      });
+    });
+    html+=`</div></div>`;
+    document.getElementById('app').insertAdjacentHTML('beforeend',html);
+  }
+}
+function goTo(view){
+  currentView=view;
+  toggleMenu(false);
+  render();
+  window.scrollTo({top:0,behavior:'instant'});
+}
+function renderView(){
+  const main=document.getElementById('main');
+  const v=VIEWS.find(v=>v.id===currentView);
+  let html = `<div class="view-title">${v.icon} ${esc(v.label)}</div>`;
+  switch(currentView){
+    case 'jour': html+=viewJour(); break;
+    case 'phyto': html+=viewPhyto(); break;
+    case 'journal': html+=viewJournal(); break;
+    case 'rangs': html+=viewRangs(); break;
+    case 'echeances': html+=viewEcheances(); break;
+    case 'equipe': html+=viewEquipe(); break;
+    case 'dashboard': html+=viewDashboard(); break;
+    case 'referentiels': html+=viewReferentiels(); break;
+    case 'donnees': html+=viewDonnees(); break;
+  }
+  main.innerHTML = html;
+}
+
+/* =========================================================
+   VUE: JOURNÉE
+========================================================= */
+let jourDraft=null;
+let jourHistQuery='';
+let jourHistLimit=10;
+function newDraft(date){
+  return { id:null, date: date||todayISO(), auVignoble:true, taches:[], transport:[], personnes:[], note:'' };
+}
+function loadDraftForDate(date){
+  const existing = DB.entries.find(e=>e.date===date);
+  jourDraft = existing ? JSON.parse(JSON.stringify(existing)) : newDraft(date);
+}
+function rangPicker(i, si, parcelle, selected){
+  const groups = rangGroups(parcelle);
+  let html = `<div class="field"><label>Rangs faits (${selected.length}/${parcelle.rangs.length})</label>`;
+  groups.forEach(g=>{
+    const ids = g.rangs.map(r=>r.id);
+    const allDone = ids.every(id=>selected.includes(id));
+    html+=`<div class="cepage-group">
+      <div class="cepage-head">
+        <span class="name">${esc(g.cepage||'Sans cépage')}</span>
+        <label class="checkline" style="margin:0;">
+          <input type="checkbox" ${allDone?'checked':''} onchange='d_toggleGroupe(${i}, ${si}, ${JSON.stringify(ids)}, this.checked)'>
+          Toute la section faite
+        </label>
+      </div>
+      <div class="row-grid">
+        ${g.rangs.map(r=>`<div class="row-cell ${selected.includes(r.id)?'done':''}" onclick="d_toggleRang(${i}, ${si}, '${r.id}')">${esc(r.nom)}</div>`).join('')}
+      </div>
+    </div>`;
+  });
+  html+=`</div>`;
+  return html;
+}
+function sectionBlock(i, si, section, ref){
+  const parcelle = ref.parcelles.find(p=>p.id===section.parcelleId);
+  let html = `<div class="sub-line-item">
+    <button class="rm" onclick="d_rmSection(${i},${si})">✕</button>
+    <div class="field">
+      <label>Parcelle</label>
+      <select onchange="d_setSectionParcelle(${i},${si},this.value)">
+        <option value="">— parcelle —</option>
+        ${ref.parcelles.map(p=>`<option value="${p.id}" ${p.id===section.parcelleId?'selected':''}>${esc(p.nom)} (${p.rangs.length} rangs)</option>`).join('')}
+      </select>
+    </div>
+    ${parcelle? rangPicker(i,si,parcelle,section.rangs||[]) : ''}
+  </div>`;
+  return html;
+}
+function viewJour(){
+  if(!jourDraft) loadDraftForDate(todayISO());
+  const ref=DB.referentiels;
+  const d=jourDraft;
+  const existingCount = DB.entries.filter(e=>e.date===d.date).length;
+
+  let html = `<div class="view-sub">Consigne rapidement ta journée : tâches, transport, équipe.</div>`;
+
+  html += `<div class="card">
+    <div class="row">
+      <div class="field">
+        <label>Date</label>
+        <input type="date" value="${d.date}" onchange="loadDraftForDate(this.value); renderView();">
+      </div>
+    </div>
+    <label class="checkline">
+      <input type="checkbox" ${d.auVignoble?'checked':''} onchange="jourDraft.auVignoble=this.checked; renderView();">
+      Déplacement au vignoble aujourd'hui ${d.auVignoble?`<span class="pill pill-vine">+ ${ref.distanceVignobleKm} km</span> <span class="pill pill-gold">+ 1h20 transport</span>`:''}
+    </label>
+    ${existingCount? `<div class="muted">Une entrée existe déjà pour cette date — tu la modifies.</div>`:''}
+  </div>`;
+
+  html += `<div class="card"><h3>Tâches de la journée</h3>`;
+  if(!d.taches.length) html+=`<div class="muted">Aucune tâche ajoutée.</div>`;
+  d.taches.forEach((ln,i)=>{
+    const isAutre = ln.tacheId===AUTRE_TACHE;
+    const t = ref.taches.find(x=>x.id===ln.tacheId);
+    html+=`<div class="line-item">
+      <button class="rm" onclick="d_rmTache(${i})">✕</button>
+      <div class="row">
+        <div class="field">
+          <label>Tâche</label>
+          <select onchange="d_setTache(${i}, this.value)">
+            <option value="">— choisir —</option>
+            ${ref.taches.map(t2=>`<option value="${t2.id}" ${t2.id===ln.tacheId?'selected':''}>${esc(t2.nom)} · ${esc(t2.categorie)}</option>`).join('')}
+            <option value="${AUTRE_TACHE}" ${isAutre?'selected':''}>Autre (préciser)…</option>
+          </select>
+        </div>
+        <div class="field" style="max-width:130px;">
+          <label>Heures (total, toi + aide)</label>
+          <input type="number" step="0.25" min="0" value="${ln.heures||''}" onchange="d_setTacheField(${i},'heures',this.value)">
+        </div>
+      </div>
+      ${isAutre? `<div class="field"><label>Préciser la tâche</label><input type="text" value="${esc(ln.tacheNomAutre||'')}" placeholder="ex : Clôture, entretien terrain…" onchange="d_setTacheField(${i},'tacheNomAutre',this.value)"></div>` : ''}
+      ${t && t.parRang ? `
+        <div class="muted" style="margin-bottom:6px;">Ajoute une parcelle par section travaillée (utile si le travail touche plusieurs parcelles la même journée)</div>
+        ${(ln.sections||[]).map((s,si)=>sectionBlock(i,si,s,ref)).join('')}
+        <button class="btn btn-ghost btn-block" onclick="d_addSection(${i})">+ Ajouter une parcelle</button>
+      ` : ''}
+    </div>`;
+  });
+  html+=`<button class="btn btn-ghost btn-block" onclick="d_addTache()">+ Ajouter une tâche</button>
+  </div>`;
+
+  html += `<div class="card"><h3>Transport (livraison, courses, etc.)</h3>
+    <div class="muted" style="margin-bottom:8px;">Le transport au vignoble (${ref.distanceVignobleKm} km, 1h20) s'ajoute automatiquement ci-dessus. Ajoute ici les déplacements additionnels.</div>`;
+  if(!d.transport.length) html+=`<div class="muted">Aucun déplacement additionnel.</div>`;
+  d.transport.forEach((ln,i)=>{
+    html+=`<div class="line-item">
+      <button class="rm" onclick="d_rmTransport(${i})">✕</button>
+      <div class="row">
+        <div class="field">
+          <label>Type</label>
+          <select onchange="d_setTransportField(${i},'typeId',this.value)">
+            <option value="">— choisir —</option>
+            ${ref.typesTransport.map(t=>`<option value="${t.id}" ${t.id===ln.typeId?'selected':''}>${esc(t.nom)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field" style="max-width:90px;"><label>Km</label>
+          <input type="number" step="1" min="0" value="${ln.km||''}" onchange="d_setTransportField(${i},'km',this.value)"></div>
+        <div class="field" style="max-width:90px;"><label>Heures</label>
+          <input type="number" step="0.25" min="0" value="${ln.heures||''}" onchange="d_setTransportField(${i},'heures',this.value)"></div>
+      </div>
+    </div>`;
+  });
+  html+=`<button class="btn btn-ghost btn-block" onclick="d_addTransport()">+ Ajouter un transport</button>
+  </div>`;
+
+  html += `<div class="card"><h3>Employés / bénévoles</h3>
+    <div class="muted" style="margin-bottom:8px;">Sert uniquement au total annuel de chaque personne — ne s'ajoute pas aux heures des tâches ci-dessus.</div>`;
+  if(!d.personnes.length) html+=`<div class="muted">Personne d'autre n'a travaillé aujourd'hui.</div>`;
+  d.personnes.forEach((ln,i)=>{
+    html+=`<div class="line-item">
+      <button class="rm" onclick="d_rmPersonne(${i})">✕</button>
+      <div class="row">
+        <div class="field">
+          <label>Personne</label>
+          <select onchange="d_setPersonneField(${i},'personneId',this.value); renderView();">
+            <option value="">— choisir —</option>
+            ${orderedPersonnes().map(p=>`<option value="${p.id}" ${p.id===ln.personneId?'selected':''}>${esc(p.nom)}</option>`).join('')}
+            <option value="${AUTRE_PERSONNE}" ${ln.personneId===AUTRE_PERSONNE?'selected':''}>Autre (préciser)…</option>
+          </select>
+        </div>
+        <div class="field" style="max-width:110px;"><label>Heures totales</label>
+          <input type="number" step="0.25" min="0" value="${ln.heures||''}" onchange="d_setPersonneField(${i},'heures',this.value)"></div>
+      </div>
+      ${ln.personneId===AUTRE_PERSONNE? `<div class="field"><label>Nom</label>
+        <input type="text" value="${esc(ln.personneNomAutre||'')}" placeholder="Nom de la personne" onchange="d_setPersonneField(${i},'personneNomAutre',this.value)"></div>`:''}
+    </div>`;
+  });
+  html+=`<button class="btn btn-ghost btn-block" onclick="d_addPersonne()">+ Ajouter une personne</button>
+  </div>`;
+
+  html += `<div class="card"><h3>Note du jour</h3>
+    <textarea placeholder="Note libre, facultative…" onchange="jourDraft.note=this.value">${esc(d.note)}</textarea>
+  </div>`;
+
+  html += `<div class="btn-row"><button class="btn btn-primary btn-block" onclick="saveJour()">Enregistrer la journée</button></div>`;
+
+  // Historique complet, avec recherche
+  html += `<div class="divider"></div><h3 style="margin-bottom:10px;">Historique</h3>
+  <div class="field"><input type="text" placeholder="Rechercher (note, tâche, date)…" value="${esc(jourHistQuery)}" oninput="jourHistQuery=this.value; jourHistLimit=10; renderView();"></div>`;
+
+  let all=[...DB.entries].sort((a,b)=>b.date.localeCompare(a.date));
+  if(jourHistQuery.trim()){
+    const q=jourHistQuery.trim().toLowerCase();
+    all = all.filter(e=>{
+      if(e.date.includes(q)) return true;
+      if((e.note||'').toLowerCase().includes(q)) return true;
+      return e.taches.some(l=>tacheDisplayName(l,ref).toLowerCase().includes(q));
+    });
+  }
+  if(!all.length){
+    html+=`<div class="empty"><div class="ic">✎</div>Aucune journée ${jourHistQuery?'ne correspond':"enregistrée pour l'instant"}.</div>`;
+  } else {
+    all.slice(0,jourHistLimit).forEach(e=>{
+      const hT=e.taches.reduce((s,l)=>s+(+l.heures||0),0);
+      const km=(e.auVignoble?ref.distanceVignobleKm:0)+e.transport.reduce((s,l)=>s+(+l.km||0),0);
+      const th=transportHoursForEntry(e);
+      html+=`<div class="card">
+        <div class="row" style="align-items:center;justify-content:space-between;">
+          <b>${fmtDate(e.date)}</b>
+          <a class="linklike" onclick="loadDraftForDate('${e.date}'); goTo('jour');">Modifier</a>
+        </div>
+        <div class="muted">${hT.toFixed(2)} h travaillées · ${km} km · transport ind. ${th.toFixed(1)} h</div>
+        ${e.taches.length? `<div style="margin-top:4px;">${e.taches.map(l=>`${esc(tacheDisplayName(l,ref))} (${l.heures}h)`).join(' · ')}</div>`:''}
+        ${e.personnes.length? `<div class="muted" style="margin-top:2px;">Équipe : ${e.personnes.map(p=>{
+          const nom = p.personneId===AUTRE_PERSONNE? (p.personneNomAutre||'—') : (ref.personnes.find(x=>x.id===p.personneId)?.nom||'—');
+          return `${esc(nom)} (${p.heures}h)`;
+        }).join(', ')}</div>`:''}
+        ${e.note? `<div style="margin-top:4px;">📝 ${esc(e.note)}</div>`:''}
+      </div>`;
+    });
+    if(all.length>jourHistLimit){
+      html+=`<button class="btn btn-ghost btn-block" onclick="jourHistLimit+=10; renderView();">Afficher plus (${all.length-jourHistLimit} restantes)</button>`;
+    }
+  }
+
+  return html;
+}
+function d_addTache(){jourDraft.taches.push({tacheId:'',heures:'',tacheNomAutre:'',sections:[]}); renderView();}
+function d_rmTache(i){jourDraft.taches.splice(i,1); renderView();}
+function d_setTache(i,val){
+  const ln=jourDraft.taches[i];
+  ln.tacheId=val;
+  const t=DB.referentiels.taches.find(x=>x.id===val);
+  if(t && t.parRang && (!ln.sections || !ln.sections.length)) ln.sections=[{parcelleId:'',rangs:[]}];
+  renderView();
+}
+function d_setTacheField(i,field,val){jourDraft.taches[i][field]=val;}
+function d_addSection(i){ jourDraft.taches[i].sections.push({parcelleId:'',rangs:[]}); renderView(); }
+function d_rmSection(i,si){ jourDraft.taches[i].sections.splice(si,1); renderView(); }
+function d_setSectionParcelle(i,si,val){ jourDraft.taches[i].sections[si]={parcelleId:val, rangs:[]}; renderView(); }
+function d_toggleRang(i,si,rangId){
+  const arr=jourDraft.taches[i].sections[si].rangs;
+  const idx=arr.indexOf(rangId);
+  if(idx>=0) arr.splice(idx,1); else arr.push(rangId);
+  renderView();
+}
+function d_toggleGroupe(i,si,rangIds,checked){
+  const sec=jourDraft.taches[i].sections[si];
+  if(checked){ rangIds.forEach(id=>{ if(!sec.rangs.includes(id)) sec.rangs.push(id); }); }
+  else { sec.rangs = sec.rangs.filter(id=>!rangIds.includes(id)); }
+  renderView();
+}
+function d_addTransport(){jourDraft.transport.push({typeId:'',km:'',heures:''}); renderView();}
+function d_rmTransport(i){jourDraft.transport.splice(i,1); renderView();}
+function d_setTransportField(i,field,val){jourDraft.transport[i][field]=val;}
+function d_addPersonne(){jourDraft.personnes.push({personneId:'',personneNomAutre:'',heures:''}); renderView();}
+function d_rmPersonne(i){jourDraft.personnes.splice(i,1); renderView();}
+function d_setPersonneField(i,field,val){jourDraft.personnes[i][field]=val;}
+
+async function saveJour(){
+  const d=jourDraft;
+  for(const l of d.taches){
+    if(l.tacheId===AUTRE_TACHE && +l.heures>0 && !l.tacheNomAutre){
+      showToast('Précise le nom de la tâche « Autre »'); return;
+    }
+  }
+  d.taches = d.taches.filter(l=>l.tacheId && +l.heures>0).map(l=>({
+    tacheId:l.tacheId,
+    tacheNomAutre: l.tacheId===AUTRE_TACHE ? (l.tacheNomAutre||'') : '',
+    heures:+l.heures,
+    sections: (l.sections||[]).filter(s=>s.parcelleId && s.rangs && s.rangs.length).map(s=>({parcelleId:s.parcelleId, rangs:s.rangs}))
+  }));
+  d.transport = d.transport.filter(l=>l.typeId && (+l.km>0 || +l.heures>0)).map(l=>({typeId:l.typeId, km:+l.km||0, heures:+l.heures||0}));
+  d.personnes = d.personnes.filter(l=>l.personneId && +l.heures>0).map(l=>({personneId:l.personneId, personneNomAutre:l.personneNomAutre||'', heures:+l.heures}));
+
+  const idx = DB.entries.findIndex(e=>e.date===d.date);
+  if(idx>=0){ d.id = DB.entries[idx].id; DB.entries[idx]=d; }
+  else { d.id = uid(); DB.entries.push(d); }
+  await save('entries');
+  showToast('Journée enregistrée');
+  renderView();
+}
+
+/* =========================================================
+   VUE: PHYTO
+========================================================= */
+let phytoDraft=null;
+let phytoAnnee=null;
+function newPhytoDraft(){return {id:null,date:todayISO(),parcelleId:'',rangs:[],produitId:'',unite:'L',dose:'',taux:'',qteProduit:'',volumeEau:'',vitesse:'',pression:'',note:''};}
+function phytoSetParcelle(val){
+  phytoDraft.parcelleId=val;
+  const p=DB.referentiels.parcelles.find(x=>x.id===val);
+  phytoDraft.rangs = p? p.rangs.map(r=>r.id) : [];
+  renderView();
+}
+function phytoToggleRang(rangId){
+  const idx=phytoDraft.rangs.indexOf(rangId);
+  if(idx>=0) phytoDraft.rangs.splice(idx,1); else phytoDraft.rangs.push(rangId);
+  renderView();
+}
+function phytoToggleSection(rangIds,checked){
+  if(checked){ rangIds.forEach(id=>{ if(!phytoDraft.rangs.includes(id)) phytoDraft.rangs.push(id); }); }
+  else { phytoDraft.rangs = phytoDraft.rangs.filter(id=>!rangIds.includes(id)); }
+  renderView();
+}
+function phytoRangPicker(parcelle, selected){
+  const groups=rangGroups(parcelle);
+  let html=`<div class="field"><label>Rangs traités (${selected.length}/${parcelle.rangs.length})</label>`;
+  groups.forEach(g=>{
+    const ids=g.rangs.map(r=>r.id);
+    const allDone=ids.every(id=>selected.includes(id));
+    html+=`<div class="cepage-group">
+      <div class="cepage-head">
+        <span class="name">${esc(g.cepage||'Sans cépage')}</span>
+        <label class="checkline" style="margin:0;">
+          <input type="checkbox" ${allDone?'checked':''} onchange='phytoToggleSection(${JSON.stringify(ids)}, this.checked)'>
+          Toute la section
+        </label>
+      </div>
+      <div class="row-grid">
+        ${g.rangs.map(r=>`<div class="row-cell ${selected.includes(r.id)?'done':''}" onclick="phytoToggleRang('${r.id}')">${esc(r.nom)}</div>`).join('')}
+      </div>
+    </div>`;
+  });
+  html+=`</div>`;
+  return html;
+}
+function viewPhyto(){
+  if(!phytoDraft) phytoDraft=newPhytoDraft();
+  const ref=DB.referentiels;
+  const d=phytoDraft;
+  const parcelle=ref.parcelles.find(p=>p.id===d.parcelleId);
+  const produit=ref.produits.find(p=>p.id===d.produitId);
+
+  let alerte='';
+  if(produit && d.parcelleId){
+    const last=[...DB.traitements].filter(t=>t.produitId===d.produitId && t.parcelleId===d.parcelleId).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    if(last && produit.intervalleJours){
+      const next=new Date(last.date); next.setDate(next.getDate()+ (+produit.intervalleJours));
+      alerte = `<div class="muted">Dernière application sur cette parcelle : ${fmtDate(last.date)} — prochaine possible dès le ${fmtDate(next.toISOString().slice(0,10))}.</div>`;
+    }
+  }
+
+  let html=`<div class="view-sub">Registre des traitements phytosanitaires, parcelle par parcelle.</div>`;
+  html+=`<div class="card"><h3>Nouveau traitement</h3>
+    <div class="row">
+      <div class="field"><label>Date</label><input type="date" value="${d.date}" onchange="phytoDraft.date=this.value"></div>
+      <div class="field">
+        <label>Parcelle traitée</label>
+        <select onchange="phytoSetParcelle(this.value)">
+          <option value="">— choisir —</option>
+          ${ref.parcelles.map(p=>`<option value="${p.id}" ${p.id===d.parcelleId?'selected':''}>${esc(p.nom)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    ${parcelle? phytoRangPicker(parcelle, d.rangs) : ''}
+    <div class="row" style="margin-top:8px;">
+      <div class="field">
+        <label>Produit appliqué</label>
+        <select onchange="phytoDraft.produitId=this.value; renderView();">
+          <option value="">— choisir —</option>
+          ${ref.produits.map(p=>`<option value="${p.id}" ${p.id===d.produitId?'selected':''}>${esc(p.nom)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field" style="max-width:100px;">
+        <label>Unité</label>
+        <select onchange="phytoDraft.unite=this.value; renderView();">
+          <option value="L" ${d.unite==='L'?'selected':''}>L</option>
+          <option value="kg" ${d.unite==='kg'?'selected':''}>kg</option>
+        </select>
+      </div>
+    </div>
+    ${alerte}
+    <div class="row" style="margin-top:8px;">
+      <div class="field"><label>Dose (${d.unite}/ha)</label><input type="number" step="any" min="0" value="${d.dose}" onchange="phytoDraft.dose=this.value"></div>
+      <div class="field"><label>Taux d'application (L/ha)</label><input type="number" step="any" min="0" value="${d.taux}" onchange="phytoDraft.taux=this.value"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Qté de produit (${d.unite})</label><input type="number" step="any" min="0" value="${d.qteProduit}" onchange="phytoDraft.qteProduit=this.value"></div>
+      <div class="field"><label>Volume d'eau (L)</label><input type="number" step="any" min="0" value="${d.volumeEau}" onchange="phytoDraft.volumeEau=this.value"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Vitesse</label><input type="text" value="${esc(d.vitesse)}" onchange="phytoDraft.vitesse=this.value"></div>
+      <div class="field"><label>Pression (Bar)</label><input type="number" step="any" min="0" value="${d.pression}" onchange="phytoDraft.pression=this.value"></div>
+    </div>
+    <div class="field"><label>Note (facultatif)</label><textarea onchange="phytoDraft.note=this.value">${esc(d.note)}</textarea></div>
+    <button class="btn btn-primary btn-block" onclick="savePhyto()">Enregistrer le traitement</button>
+  </div>`;
+
+  const years=[...new Set(DB.traitements.map(t=>yearOf(t.date)))].sort().reverse();
+  const curYear=new Date().getFullYear().toString();
+  if(!years.includes(curYear)) years.unshift(curYear);
+  if(!phytoAnnee) phytoAnnee=years[0];
+
+  const yearTreat=[...DB.traitements].filter(t=>yearOf(t.date)===phytoAnnee).sort((a,b)=>a.date.localeCompare(b.date));
+  const counters={}; const seqMap={};
+  yearTreat.forEach(t=>{ counters[t.produitId]=(counters[t.produitId]||0)+1; seqMap[t.id]=counters[t.produitId]; });
+  const qtyByProduct={};
+  yearTreat.forEach(t=>{
+    const key=t.produitId+'|'+(t.unite||'L');
+    qtyByProduct[key]=(qtyByProduct[key]||0)+(+t.qteProduit||0);
+  });
+
+  html+=`<div class="divider"></div>
+  <div class="card">
+    <div class="field"><label>Année du résumé</label>
+      <select onchange="phytoAnnee=this.value; renderView();">
+        ${years.map(y=>`<option value="${y}" ${y===phytoAnnee?'selected':''}>${y}</option>`).join('')}
+      </select>
+    </div>
+    <h3>Résumé par produit (${phytoAnnee})</h3>
+    ${!yearTreat.length? `<div class="muted">Aucun traitement cette année-là.</div>` : `
+    <table><thead><tr><th>Produit</th><th class="num"># traitements</th><th class="num">Qté totale</th></tr></thead><tbody>
+      ${ref.produits.map(p=>{
+        const count=counters[p.id]||0;
+        if(!count) return '';
+        const qtyParts=Object.keys(qtyByProduct).filter(k=>k.startsWith(p.id+'|')).map(k=>{
+          const u=k.split('|')[1];
+          return `${qtyByProduct[k].toFixed(1)} ${u}`;
+        });
+        return `<tr><td>${esc(p.nom)}</td><td class="num">${count}</td><td class="num">${qtyParts.join(' + ')}</td></tr>`;
+      }).join('')}
+    </tbody></table>`}
+  </div>`;
+
+  html+=`<h3 style="margin:14px 0 10px;">Historique</h3>`;
+  const hist=[...DB.traitements].sort((a,b)=>b.date.localeCompare(a.date));
+  if(!hist.length){
+    html+=`<div class="empty"><div class="ic">⚗</div>Aucun traitement enregistré.</div>`;
+  } else {
+    hist.forEach(t=>{
+      const p=ref.parcelles.find(x=>x.id===t.parcelleId);
+      const pr=ref.produits.find(x=>x.id===t.produitId);
+      const seq = yearOf(t.date)===phytoAnnee ? seqMap[t.id] : null;
+      const rl = p? rangsLabel(p, t.rangs||[]) : '';
+      const partiel = p && t.rangs && t.rangs.length < p.rangs.length;
+      html+=`<div class="card">
+        <div class="row" style="align-items:center;justify-content:space-between;">
+          <div><b>${fmtDate(t.date)}</b> · ${esc(p?.nom||'—')} <span class="muted">(${t.rangs?.length||p?.rangs?.length||'?'}${partiel?' / '+p.rangs.length:''} rangs${partiel?' — partiel':''})</span></div>
+          <button class="btn btn-danger btn-sm" onclick="delPhyto('${t.id}')">Suppr.</button>
+        </div>
+        <div class="muted">Produit : <b>${esc(pr?.nom||'—')}${seq?` #${seq}`:''}</b></div>
+        ${partiel? `<div class="muted">Rangs : ${esc(rl)}</div>`:''}
+        <div class="muted">Dose ${t.dose||'—'} ${t.unite||''}/ha · Taux ${t.taux||'—'} L/ha · Qté ${t.qteProduit||'—'} ${t.unite||''} · Eau ${t.volumeEau||'—'} L · Vitesse ${esc(t.vitesse)||'—'} · Pression ${t.pression||'—'} Bar</div>
+        ${t.note?`<div class="muted">Note : ${esc(t.note)}</div>`:''}
+      </div>`;
+    });
+  }
+  return html;
+}
+async function savePhyto(){
+  const d=phytoDraft;
+  if(!d.parcelleId || !d.produitId){showToast('Choisis une parcelle et un produit'); return;}
+  if(!d.rangs || !d.rangs.length){showToast('Sélectionne au moins un rang'); return;}
+  d.id=uid();
+  DB.traitements.push(d);
+  await save('traitements');
+  showToast('Traitement enregistré');
+  phytoDraft=newPhytoDraft();
+  renderView();
+}
+async function delPhyto(id){
+  DB.traitements = DB.traitements.filter(t=>t.id!==id);
+  await save('traitements');
+  renderView();
+}
+
+/* =========================================================
+   VUE: JOURNAL (observations + stades phénologiques)
+========================================================= */
+let journalTab='observation';
+let journalDraft=null;
+function newJournalDraft(){return {id:null,type:journalTab,date:todayISO(),parcelleId:'',rangsStr:'',cepage:'',stade:'',texte:'',hasPhoto:false};}
+function viewJournal(){
+  if(!journalDraft) journalDraft=newJournalDraft();
+  const ref=DB.referentiels;
+  const d=journalDraft;
+  let html=`<div class="view-sub">Note rapide d'observation au champ, ou stade phénologique par cépage.</div>`;
+  html+=`<div class="tabs">
+    <div class="tab ${journalTab==='observation'?'active':''}" onclick="setJournalTab('observation')">Observation</div>
+    <div class="tab ${journalTab==='phenologie'?'active':''}" onclick="setJournalTab('phenologie')">Stade phénologique</div>
+  </div>`;
+
+  html+=`<div class="card"><h3>Nouvelle entrée</h3>
+    <div class="row">
+      <div class="field"><label>Date</label><input type="date" value="${d.date}" onchange="journalDraft.date=this.value"></div>
+      <div class="field">
+        <label>Parcelle</label>
+        <select onchange="journalDraft.parcelleId=this.value">
+          <option value="">— optionnel —</option>
+          ${ref.parcelles.map(p=>`<option value="${p.id}" ${p.id===d.parcelleId?'selected':''}>${esc(p.nom)}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+  if(journalTab==='observation'){
+    html+=`<div class="row">
+        <div class="field"><label>Rang(s) concerné(s)</label><input type="text" placeholder="ex : 4-A" value="${esc(d.rangsStr)}" onchange="journalDraft.rangsStr=this.value"></div>
+      </div>
+      <div class="field"><label>Observation</label><textarea placeholder="ex : mildiou visible, feuilles tachées" onchange="journalDraft.texte=this.value">${esc(d.texte)}</textarea></div>
+      <div class="field">
+        <label>Photo (facultatif)</label>
+        <input type="file" accept="image/*" onchange="handlePhotoInput(this)">
+        <div class="muted" id="photoStatus">${d.hasPhoto?'Photo jointe.':''}</div>
+      </div>`;
+  } else {
+    html+=`<div class="row">
+      <div class="field">
+        <label>Cépage</label>
+        <select onchange="journalDraft.cepage=this.value">
+          <option value="">— choisir —</option>
+          ${ref.cepages.map(c=>`<option value="${esc(c)}" ${c===d.cepage?'selected':''}>${esc(c)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>Stade</label>
+        <select onchange="journalDraft.stade=this.value">
+          <option value="">— choisir —</option>
+          ${ref.stadesPheno.map(s=>`<option value="${esc(s)}" ${s===d.stade?'selected':''}>${esc(s)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Note (facultatif)</label><textarea onchange="journalDraft.texte=this.value">${esc(d.texte)}</textarea></div>`;
+  }
+  html+=`<button class="btn btn-primary btn-block" onclick="saveJournal()">Enregistrer</button></div>`;
+
+  html+=`<div class="divider"></div><h3 style="margin-bottom:10px;">Journal récent</h3>`;
+  const list=[...DB.observations].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,25);
+  if(!list.length){
+    html+=`<div class="empty"><div class="ic">✦</div>Aucune entrée pour l'instant.</div>`;
+  } else {
+    list.forEach(o=>{
+      const p=ref.parcelles.find(x=>x.id===o.parcelleId);
+      html+=`<div class="card">
+        <div class="row" style="align-items:center;justify-content:space-between;">
+          <div>
+            <span class="pill ${o.type==='observation'?'pill-brick':'pill-vine'}">${o.type==='observation'?'Observation':'Stade'}</span>
+            <b style="margin-left:6px;">${fmtDate(o.date)}</b>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="delJournal('${o.id}')">Suppr.</button>
+        </div>
+        <div class="muted">${p?esc(p.nom):''}${o.rangsStr?' · rang '+esc(o.rangsStr):''}${o.cepage?' · '+esc(o.cepage):''}${o.stade?' · '+esc(o.stade):''}</div>
+        ${o.texte?`<div style="margin-top:4px;">${esc(o.texte)}</div>`:''}
+        ${o.hasPhoto?`<a class="linklike" onclick="viewPhoto('${o.id}')">Voir la photo</a>`:''}
+      </div>`;
+    });
+  }
+  return html;
+}
+function setJournalTab(t){journalTab=t; journalDraft=newJournalDraft(); renderView();}
+function handlePhotoInput(input){
+  const file=input.files[0];
+  if(!file) return;
+  const img=new Image();
+  const reader=new FileReader();
+  reader.onload=e=>{
+    img.onload=()=>{
+      const maxW=700;
+      const scale=Math.min(1,maxW/img.width);
+      const canvas=document.createElement('canvas');
+      canvas.width=img.width*scale; canvas.height=img.height*scale;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      journalDraft.pendingPhoto = canvas.toDataURL('image/jpeg',0.6);
+      journalDraft.hasPhoto=true;
+      document.getElementById('photoStatus').textContent='Photo prête à être enregistrée.';
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+async function saveJournal(){
+  const d=journalDraft;
+  if(journalTab==='observation' && !d.texte && !d.hasPhoto){showToast('Ajoute un texte ou une photo'); return;}
+  if(journalTab==='phenologie' && !d.cepage){showToast('Choisis un cépage'); return;}
+  d.id=uid();
+  d.type=journalTab;
+  const pending=d.pendingPhoto;
+  delete d.pendingPhoto;
+  DB.observations.push(d);
+  await save('observations');
+  if(pending){
+    try{ await idbSet('photo:'+d.id, pending); }
+    catch(e){ showToast('Note enregistrée, mais la photo a échoué à se sauvegarder'); }
+  }
+  showToast('Entrée enregistrée');
+  journalDraft=newJournalDraft();
+  renderView();
+}
+async function delJournal(id){
+  DB.observations = DB.observations.filter(o=>o.id!==id);
+  await save('observations');
+  try{ await idbDelete('photo:'+id); }catch(e){}
+  renderView();
+}
+async function viewPhoto(id){
+  try{
+    const val=await idbGet('photo:'+id);
+    if(val===undefined){ showToast('Photo introuvable'); return; }
+    document.getElementById('modalBody').innerHTML=`<button class="modal-close" onclick="closeModal()">✕</button><img src="${val}">`;
+    document.getElementById('modalOverlay').classList.add('open');
+  }catch(e){
+    showToast('Photo introuvable');
+  }
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+
+/* =========================================================
+   VUE: RANGS (avancement)
+========================================================= */
+let rangsTacheId=null, rangsParcelleId=null;
+function viewRangs(){
+  const ref=DB.referentiels;
+  const tachesParRang = ref.taches.filter(t=>t.parRang);
+  if(!rangsTacheId && tachesParRang.length) rangsTacheId=tachesParRang[0].id;
+  if(!rangsParcelleId && ref.parcelles.length) rangsParcelleId=ref.parcelles[0].id;
+
+  let html=`<div class="view-sub">Vue par rang pour les tâches longues (taille, épamprage…) — ce qui est fait, ce qu'il reste.</div>`;
+  if(!tachesParRang.length){
+    html+=`<div class="empty">Aucune tâche n'est marquée « suivi par rang » dans les référentiels.</div>`;
+    return html;
+  }
+  html+=`<div class="card">
+    <div class="row">
+      <div class="field"><label>Tâche</label>
+        <select onchange="rangsTacheId=this.value; renderView();">
+          ${tachesParRang.map(t=>`<option value="${t.id}" ${t.id===rangsTacheId?'selected':''}>${esc(t.nom)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Parcelle</label>
+        <select onchange="rangsParcelleId=this.value; renderView();">
+          ${ref.parcelles.map(p=>`<option value="${p.id}" ${p.id===rangsParcelleId?'selected':''}>${esc(p.nom)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+  </div>`;
+
+  const parcelle = ref.parcelles.find(p=>p.id===rangsParcelleId);
+  if(!parcelle) return html;
+
+  const doneMap={};
+  DB.entries.forEach(e=>{
+    e.taches.filter(l=>l.tacheId===rangsTacheId).forEach(l=>{
+      (l.sections||[]).filter(s=>s.parcelleId===rangsParcelleId).forEach(s=>{
+        (s.rangs||[]).forEach(rid=>{ if(!doneMap[rid] || doneMap[rid] < e.date) doneMap[rid]=e.date; });
+      });
+    });
+  });
+  const total = parcelle.rangs.length;
+  const doneCount = parcelle.rangs.filter(r=>doneMap[r.id]).length;
+  const pct = total? Math.round(100*doneCount/total):0;
+
+  html+=`<div class="card">
+    <h3>${esc(parcelle.nom)} — ${doneCount}/${total} rangs faits</h3>
+    <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
+    <div class="muted" style="margin-top:6px;">${pct}% complété</div>
+  </div>`;
+
+  const groups = rangGroups(parcelle);
+  groups.forEach(g=>{
+    const gDone = g.rangs.filter(r=>doneMap[r.id]).length;
+    html+=`<div class="card">
+      <div class="cepage-head"><span class="name">${esc(g.cepage||'Sans cépage')}</span><span class="muted">${gDone}/${g.rangs.length}</span></div>
+      <div class="row-grid">
+        ${g.rangs.map(r=>`<div class="row-cell ${doneMap[r.id]?'done':''}" title="${doneMap[r.id]?'Fait le '+fmtDate(doneMap[r.id]):'À faire'}">${esc(r.nom)}</div>`).join('')}
+      </div>
+    </div>`;
+  });
+
+  const remaining = parcelle.rangs.filter(r=>!doneMap[r.id]).map(r=>r.nom);
+  html+=`<div class="card"><h3>Reste à faire</h3>
+    ${remaining.length? `<div class="muted">Rangs : ${esc(remaining.join(', '))}</div>` : `<div class="pill pill-vine">Tout est fait ✓</div>`}
+  </div>`;
+
+  return html;
+}
+
+/* =========================================================
+   VUE: ÉCHÉANCIER (récurrent, jour/mois — sans année)
+========================================================= */
+let echDraft=null;
+function newEchDraft(){return {id:null,tacheId:'',moisJour:todayISO().slice(5,10),note:''};}
+function viewEcheances(){
+  if(!echDraft) echDraft=newEchDraft();
+  const ref=DB.referentiels;
+  const d=echDraft;
+  let html=`<div class="view-sub">Dates cibles pour les tâches critiques (épamprage, relevage…) — récurrentes chaque année jusqu'à ce que tu les modifies.</div>`;
+  html+=`<div class="card"><h3>Nouvelle échéance</h3>
+    <div class="row">
+      <div class="field"><label>Tâche</label>
+        <select onchange="echDraft.tacheId=this.value">
+          <option value="">— choisir —</option>
+          ${ref.taches.map(t=>`<option value="${t.id}" ${t.id===d.tacheId?'selected':''}>${esc(t.nom)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Date cible (jour/mois)</label>
+        <input type="date" value="2026-${d.moisJour}" onchange="echDraft.moisJour=this.value.slice(5,10)">
+      </div>
+    </div>
+    <div class="field"><label>Note (facultatif)</label><input type="text" value="${esc(d.note)}" onchange="echDraft.note=this.value"></div>
+    <button class="btn btn-primary btn-block" onclick="saveEch()">Ajouter l'échéance</button>
+  </div>`;
+
+  const todayMJ=todayISO().slice(5,10);
+  const list=[...DB.echeances].sort((a,b)=>a.moisJour.localeCompare(b.moisJour));
+  html+=`<div class="divider"></div><h3 style="margin-bottom:10px;">Échéances (chaque année)</h3>`;
+  if(!list.length) html+=`<div class="empty"><div class="ic">◷</div>Aucune échéance planifiée.</div>`;
+  list.forEach(e=>{
+    const t=ref.taches.find(x=>x.id===e.tacheId);
+    const late = e.moisJour < todayMJ;
+    html+=`<div class="card">
+      <div class="row" style="align-items:center;justify-content:space-between;">
+        <div><b>${esc(t?.nom||'—')}</b> <span class="pill ${late?'pill-brick':'pill-gold'}">${fmtMoisJour(e.moisJour)}${late?' · passée cette année':''}</span></div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="editEch('${e.id}')">Modifier</button>
+          <button class="btn btn-danger btn-sm" onclick="delEch('${e.id}')">Suppr.</button>
+        </div>
+      </div>
+      ${e.note?`<div class="muted">${esc(e.note)}</div>`:''}
+    </div>`;
+  });
+  return html;
+}
+async function saveEch(){
+  const d=echDraft;
+  if(!d.tacheId||!d.moisJour){showToast('Choisis une tâche et une date'); return;}
+  if(d.id){
+    const idx=DB.echeances.findIndex(x=>x.id===d.id);
+    if(idx>=0) DB.echeances[idx]=d;
+  } else {
+    d.id=uid();
+    DB.echeances.push(d);
+  }
+  await save('echeances');
+  showToast('Échéance enregistrée');
+  echDraft=newEchDraft();
+  renderView();
+}
+function editEch(id){
+  const e=DB.echeances.find(x=>x.id===id);
+  if(e) echDraft=JSON.parse(JSON.stringify(e));
+  renderView();
+  window.scrollTo({top:0,behavior:'instant'});
+}
+async function delEch(id){
+  DB.echeances=DB.echeances.filter(e=>e.id!==id);
+  await save('echeances');
+  renderView();
+}
+
+/* =========================================================
+   VUE: ÉQUIPE
+========================================================= */
+let equipeAnnee=null;
+function viewEquipe(){
+  const ref=DB.referentiels;
+  const years=[...new Set(DB.entries.map(e=>yearOf(e.date)))].sort().reverse();
+  if(!years.length) years.push(new Date().getFullYear().toString());
+  if(!equipeAnnee) equipeAnnee=years[0];
+
+  let html=`<div class="view-sub">Total des heures par personne, pour l'année sélectionnée.</div>`;
+  html+=`<div class="card"><div class="field"><label>Année</label>
+    <select onchange="equipeAnnee=this.value; renderView();">
+      ${years.map(y=>`<option value="${y}" ${y===equipeAnnee?'selected':''}>${y}</option>`).join('')}
+    </select></div></div>`;
+
+  const totals={}; ref.personnes.forEach(p=>totals[p.id]=0);
+  const adhoc={};
+  DB.entries.filter(e=>yearOf(e.date)===equipeAnnee).forEach(e=>{
+    e.personnes.forEach(l=>{
+      if(l.personneId===AUTRE_PERSONNE){
+        const key=l.personneNomAutre||'(sans nom)';
+        adhoc[key]=(adhoc[key]||0)+(+l.heures||0);
+      } else {
+        totals[l.personneId]=(totals[l.personneId]||0)+(+l.heures||0);
+      }
+    });
+  });
+
+  const totalHeures = DB.entries.filter(e=>yearOf(e.date)===equipeAnnee)
+    .reduce((s,e)=>s+e.taches.reduce((s2,l)=>s2+(+l.heures||0),0),0);
+  const totalPersonnesSuivies = Object.values(totals).reduce((a,b)=>a+b,0) + Object.values(adhoc).reduce((a,b)=>a+b,0);
+
+  html+=`<div class="kpi-grid">
+    <div class="kpi"><div class="val">${totalHeures.toFixed(1)}</div><div class="lbl">Heures totales (${equipeAnnee})</div></div>
+    <div class="kpi"><div class="val">${totalPersonnesSuivies.toFixed(1)}</div><div class="lbl">Bénévoles/employés — suivi individuel (${equipeAnnee})</div></div>
+  </div>`;
+
+  html+=`<table><thead><tr><th>Personne</th><th class="num">Heures ${equipeAnnee}</th><th>Coordonnées</th></tr></thead><tbody>`;
+  ref.personnes.forEach(p=>{
+    html+=`<tr><td>${esc(p.nom)}</td><td class="num">${(totals[p.id]||0).toFixed(2)}</td><td class="muted">${esc(p.telephone||'')} ${p.telephone&&p.courriel?'·':''} ${esc(p.courriel||'')}</td></tr>`;
+  });
+  html+=`</tbody></table>`;
+
+  const adhocKeys=Object.keys(adhoc);
+  if(adhocKeys.length){
+    html+=`<div class="divider"></div><h3 style="margin-bottom:10px;">Autres (ponctuels)</h3>
+    <table><thead><tr><th>Nom</th><th class="num">Heures ${equipeAnnee}</th></tr></thead><tbody>
+      ${adhocKeys.map(k=>`<tr><td>${esc(k)}</td><td class="num">${adhoc[k].toFixed(2)}</td></tr>`).join('')}
+    </tbody></table>`;
+  }
+  return html;
+}
+
+/* =========================================================
+   VUE: TABLEAU DE BORD
+========================================================= */
+let dashAnnee=null;
+function viewDashboard(){
+  const ref=DB.referentiels;
+  const years=[...new Set(DB.entries.map(e=>yearOf(e.date)))].sort().reverse();
+  const curYear=new Date().getFullYear().toString();
+  if(!years.includes(curYear)) years.unshift(curYear);
+  if(!dashAnnee) dashAnnee=years[0];
+  const compareYears=[dashAnnee, (parseInt(dashAnnee)-1).toString(), (parseInt(dashAnnee)-2).toString()];
+
+  let html=`<div class="view-sub">Portrait de la saison : heures par tâche, comparatif, kilométrage.</div>`;
+  html+=`<div class="card"><div class="field"><label>Année principale</label>
+    <select onchange="dashAnnee=this.value; renderView();">
+      ${years.map(y=>`<option value="${y}" ${y===dashAnnee?'selected':''}>${y}</option>`).join('')}
+    </select></div></div>`;
+
+  const entriesYear=DB.entries.filter(e=>yearOf(e.date)===dashAnnee);
+  const totalHeures = entriesYear.reduce((s,e)=> s + e.taches.reduce((s2,l)=>s2+(+l.heures||0),0), 0);
+  const totalKm = entriesYear.reduce((s,e)=> s + (e.auVignoble?ref.distanceVignobleKm:0) + e.transport.reduce((s2,l)=>s2+(+l.km||0),0), 0);
+  const totalTransportH = entriesYear.reduce((s,e)=> s + transportHoursForEntry(e), 0);
+
+  html+=`<div class="kpi-grid">
+    <div class="kpi"><div class="val">${totalHeures.toFixed(0)}</div><div class="lbl">Heures travaillées ${dashAnnee}</div></div>
+    <div class="kpi"><div class="val">${totalKm}</div><div class="lbl">Km totaux ${dashAnnee}</div></div>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="val">${totalTransportH.toFixed(1)}</div><div class="lbl">Temps de transport (indicatif) ${dashAnnee}</div></div>
+    <div class="kpi"><div class="val">${(totalHeures+totalTransportH).toFixed(0)}</div><div class="lbl">Total incluant transport</div></div>
+  </div>
+  <div class="note-box">Le temps de transport est indicatif seulement — il n'entre pas dans les heures travaillées, qui reflètent uniquement le travail au champ et les tâches connexes.</div>`;
+
+  function hoursByTask(year){
+    const map={};
+    DB.entries.filter(e=>yearOf(e.date)===year).forEach(e=>{
+      e.taches.forEach(l=>{ map[l.tacheId]=(map[l.tacheId]||0)+(+l.heures||0); });
+    });
+    return map;
+  }
+  const dataByYear = compareYears.map(y=>hoursByTask(y));
+
+  html+=`<div class="card"><h3>Heures par opération (tâche) — comparatif</h3>
+    <table><thead><tr><th>Tâche</th>${compareYears.map(y=>`<th class="num">${y}</th>`).join('')}</tr></thead><tbody>`;
+  ref.taches.forEach(t=>{
+    const vals=dataByYear.map(m=>m[t.id]||0);
+    if(vals.every(v=>v===0)) return;
+    html+=`<tr><td>${esc(t.nom)}</td>${vals.map(v=>`<td class="num">${v.toFixed(1)}</td>`).join('')}</tr>`;
+  });
+  const autresVals=dataByYear.map(m=>m[AUTRE_TACHE]||0);
+  if(!autresVals.every(v=>v===0)){
+    html+=`<tr><td>Autres</td>${autresVals.map(v=>`<td class="num">${v.toFixed(1)}</td>`).join('')}</tr>`;
+  }
+  html+=`</tbody></table></div>`;
+
+  const catTotals={};
+  ref.categories.forEach(c=>catTotals[c]=0);
+  entriesYear.forEach(e=>e.taches.forEach(l=>{
+    const t=ref.taches.find(x=>x.id===l.tacheId);
+    if(t) catTotals[t.categorie]=(catTotals[t.categorie]||0)+(+l.heures||0);
+  }));
+  html+=`<div class="card"><h3>Répartition par catégorie (${dashAnnee})</h3>`;
+  const maxCat=Math.max(1,...Object.values(catTotals));
+  ref.categories.forEach(c=>{
+    const v=catTotals[c]||0;
+    html+=`<div style="margin-bottom:8px;">
+      <div class="row" style="justify-content:space-between;"><span>${esc(c)}</span><span class="mono">${v.toFixed(1)} h</span></div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${maxCat? (100*v/maxCat):0}%"></div></div>
+    </div>`;
+  });
+  html+=`</div>`;
+
+  return html;
+}
+
+/* =========================================================
+   VUE: RÉFÉRENTIELS
+========================================================= */
+let refTab='taches';
+function viewReferentiels(){
+  const ref=DB.referentiels;
+  let html=`<div class="view-sub">Gère les listes utilisées dans toute l'application — ajoute, modifie, retire.</div>`;
+  html+=`<div class="tabs">
+    ${['taches','personnes','parcelles','transport','produits','stades','parametres'].map(tb=>`
+      <div class="tab ${refTab===tb?'active':''}" onclick="refTab='${tb}'; renderView();">${({taches:'Tâches',personnes:'Personnes',parcelles:'Parcelles',transport:'Transport',produits:'Produits',stades:'Stades',parametres:'Paramètres'})[tb]}</div>
+    `).join('')}
+  </div>`;
+
+  if(refTab==='taches'){
+    html+=`<div class="card"><h3>Ajouter une tâche</h3>
+      <div class="row">
+        <div class="field"><label>Nom</label><input type="text" id="newTacheNom" placeholder="ex : Buttage"></div>
+        <div class="field"><label>Catégorie</label>
+          <select id="newTacheCat">${ref.categories.map(c=>`<option>${esc(c)}</option>`).join('')}</select>
+        </div>
+      </div>
+      <label class="checkline"><input type="checkbox" id="newTacheRang"> Suivi par rang (ex : taille, épamprage)</label>
+      <button class="btn btn-primary btn-block" onclick="addTache()">Ajouter</button>
+    </div>`;
+    html+=`<table><thead><tr><th>Nom</th><th>Catégorie</th><th>Par rang</th><th></th></tr></thead><tbody>`;
+    ref.taches.forEach(t=>{
+      html+=`<tr>
+        <td><input type="text" value="${esc(t.nom)}" onchange="updateTache('${t.id}','nom',this.value)"></td>
+        <td><select onchange="updateTache('${t.id}','categorie',this.value)">${ref.categories.map(c=>`<option ${c===t.categorie?'selected':''}>${esc(c)}</option>`).join('')}</select></td>
+        <td style="text-align:center;"><input type="checkbox" ${t.parRang?'checked':''} onchange="updateTache('${t.id}','parRang',this.checked)"></td>
+        <td><button class="btn btn-danger btn-sm" onclick="rmTache('${t.id}')">Suppr.</button></td>
+      </tr>`;
+    });
+    html+=`</tbody></table>`;
+    html+=`<div class="divider"></div><div class="card"><h3>Catégories</h3>
+      <div class="row"><div class="field"><input type="text" id="newCatNom" placeholder="Nouvelle catégorie"></div></div>
+      <button class="btn btn-ghost btn-block" onclick="addCategorie()">+ Ajouter une catégorie</button>
+      <div style="margin-top:10px;">${ref.categories.map(c=>`<span class="pill pill-wine" style="margin:2px;">${esc(c)}</span>`).join('')}</div>
+    </div>`;
+  }
+  else if(refTab==='personnes'){
+    html+=`<div class="card"><h3>Ajouter une personne</h3>
+      <div class="field"><label>Nom</label><input type="text" id="newPersNom" placeholder="ex : Guy (bénévole)"></div>
+      <div class="row">
+        <div class="field"><label>Téléphone</label><input type="tel" id="newPersTel" placeholder="facultatif"></div>
+        <div class="field"><label>Courriel</label><input type="email" id="newPersEmail" placeholder="facultatif"></div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="addPersonne()">Ajouter</button>
+    </div>`;
+    html+=`<table><thead><tr><th>Nom</th><th>Téléphone</th><th>Courriel</th><th></th></tr></thead><tbody>`;
+    ref.personnes.forEach(p=>{
+      html+=`<tr>
+        <td><input type="text" value="${esc(p.nom)}" onchange="updatePersonne('${p.id}','nom',this.value)"></td>
+        <td><input type="tel" value="${esc(p.telephone||'')}" style="min-width:100px;" onchange="updatePersonne('${p.id}','telephone',this.value)"></td>
+        <td><input type="email" value="${esc(p.courriel||'')}" style="min-width:130px;" onchange="updatePersonne('${p.id}','courriel',this.value)"></td>
+        <td><button class="btn btn-danger btn-sm" onclick="rmPersonne('${p.id}')">Suppr.</button></td>
+      </tr>`;
+    });
+    html+=`</tbody></table>`;
+  }
+  else if(refTab==='parcelles'){
+    html+=`<div class="card"><h3>Ajouter une parcelle</h3>
+      <div class="field"><label>Nom</label><input type="text" id="newParcNom" placeholder="ex : Parcelle C"></div>
+      <button class="btn btn-primary btn-block" onclick="addParcelle()">Ajouter</button>
+    </div>`;
+    ref.parcelles.forEach(p=>{
+      html+=`<div class="card">
+        <div class="row" style="align-items:center;justify-content:space-between;">
+          <h3 style="margin:0;">${esc(p.nom)} <span class="muted">(${p.rangs.length} rangs)</span></h3>
+          <button class="btn btn-danger btn-sm" onclick="rmParcelle('${p.id}')">Suppr. parcelle</button>
+        </div>
+        <div class="divider"></div>
+        <div class="muted" style="margin-bottom:8px;">Ajout groupé de rangs (ex : 1 à 5, suffixe "-A", cépage Somerset → 1-A, 2-A… 5-A)</div>
+        <div class="row">
+          <div class="field" style="max-width:80px;"><label>De</label><input type="number" id="bulkFrom_${p.id}" value="1"></div>
+          <div class="field" style="max-width:80px;"><label>À</label><input type="number" id="bulkTo_${p.id}" value="5"></div>
+          <div class="field" style="max-width:100px;"><label>Suffixe</label><input type="text" id="bulkSuffix_${p.id}" value="-${p.nom.slice(-1)}"></div>
+          <div class="field"><label>Cépage</label><input type="text" id="bulkCepage_${p.id}" placeholder="ex : Somerset"></div>
+        </div>
+        <button class="btn btn-ghost btn-block" onclick="bulkAddRangs('${p.id}')">+ Générer les rangs</button>
+        <div class="divider"></div>
+        ${rangGroups(p).map(g=>`
+          <div class="cepage-group">
+            <div class="cepage-head"><span class="name">${esc(g.cepage||'Sans cépage')}</span></div>
+            <div class="row-grid">
+              ${g.rangs.map(r=>`<div class="row-cell" style="cursor:pointer;" title="Supprimer" onclick="rmRang('${p.id}','${r.id}')">${esc(r.nom)} ✕</div>`).join('')}
+            </div>
+          </div>
+        `).join('') || `<div class="muted">Aucun rang défini — utilise l'ajout groupé ci-dessus.</div>`}
+      </div>`;
+    });
+  }
+  else if(refTab==='transport'){
+    html+=`<div class="card"><h3>Ajouter un type de transport</h3>
+      <div class="field"><input type="text" id="newTranspNom" placeholder="ex : Livraison"></div>
+      <button class="btn btn-primary btn-block" onclick="addTransportType()">Ajouter</button>
+    </div>`;
+    html+=`<table><thead><tr><th>Type</th><th></th></tr></thead><tbody>`;
+    ref.typesTransport.forEach(t=>{
+      html+=`<tr><td><input type="text" value="${esc(t.nom)}" onchange="updateTransportType('${t.id}',this.value)"></td><td><button class="btn btn-danger btn-sm" onclick="rmTransportType('${t.id}')">Suppr.</button></td></tr>`;
+    });
+    html+=`</tbody></table>`;
+  }
+  else if(refTab==='produits'){
+    html+=`<div class="card"><h3>Ajouter un produit</h3>
+      <div class="row">
+        <div class="field"><label>Nom</label><input type="text" id="newProdNom" placeholder="ex : Bouillie bordelaise"></div>
+        <div class="field" style="max-width:130px;"><label>Intervalle (j)</label><input type="number" id="newProdInt" min="0" placeholder="10"></div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="addProduit()">Ajouter</button>
+    </div>`;
+    html+=`<table><thead><tr><th>Produit</th><th class="num">Intervalle</th><th></th></tr></thead><tbody>`;
+    ref.produits.forEach(p=>{
+      html+=`<tr>
+        <td><input type="text" value="${esc(p.nom)}" onchange="updateProduit('${p.id}','nom',this.value)"></td>
+        <td><input type="number" style="max-width:70px;" value="${p.intervalleJours||0}" onchange="updateProduit('${p.id}','intervalleJours',this.value)"></td>
+        <td><button class="btn btn-danger btn-sm" onclick="rmProduit('${p.id}')">Suppr.</button></td>
+      </tr>`;
+    });
+    html+=`</tbody></table>`;
+  }
+  else if(refTab==='stades'){
+    html+=`<div class="card"><h3>Ajouter un stade</h3>
+      <div class="field"><input type="text" id="newStadeNom" placeholder="ex : Nouaison"></div>
+      <button class="btn btn-primary btn-block" onclick="addStade()">Ajouter</button>
+    </div>`;
+    html+=`<div class="card"><h3>Ordre des stades</h3>
+      <div class="muted" style="margin-bottom:8px;">L'ordre reflète la séquence phénologique — ajuste avec les flèches au besoin.</div>`;
+    ref.stadesPheno.forEach((s,idx)=>{
+      html+=`<div class="line-item" style="display:flex;align-items:center;justify-content:space-between;padding-right:8px;">
+        <span>${idx+1}. ${esc(s)}</span>
+        <div style="display:flex;gap:4px;">
+          <button class="btn btn-ghost btn-sm" onclick="moveStade(${idx},-1)">↑</button>
+          <button class="btn btn-ghost btn-sm" onclick="moveStade(${idx},1)">↓</button>
+          <button class="btn btn-danger btn-sm" onclick="rmStade(${idx})">✕</button>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  else if(refTab==='parametres'){
+    html+=`<div class="card"><h3>Distance vignoble</h3>
+      <div class="field"><label>Kilométrage aller-retour (auto-appliqué les jours travaillés)</label>
+        <input type="number" min="0" value="${ref.distanceVignobleKm}" onchange="setDistance(this.value)">
+      </div>
+      <div class="muted">Le temps de transport associé est fixé à ${TRANSPORT_VIGNOBLE_MIN} minutes (1h20) et s'ajoute automatiquement les jours où tu te rends au vignoble.</div>
+    </div>`;
+  }
+
+  return html;
+}
+async function saveRef(){ await save('referentiels'); renderView(); }
+function addTache(){
+  const nom=document.getElementById('newTacheNom').value.trim();
+  if(!nom) return;
+  DB.referentiels.taches.push({id:uid(),nom,categorie:document.getElementById('newTacheCat').value,parRang:document.getElementById('newTacheRang').checked});
+  saveRef();
+}
+function updateTache(id,field,val){
+  const t=DB.referentiels.taches.find(x=>x.id===id);
+  if(t){ t[field]=val; saveRef(); }
+}
+function rmTache(id){DB.referentiels.taches=DB.referentiels.taches.filter(t=>t.id!==id); saveRef();}
+function addCategorie(){
+  const v=document.getElementById('newCatNom').value.trim();
+  if(!v) return;
+  DB.referentiels.categories.push(v); saveRef();
+}
+function addPersonne(){
+  const v=document.getElementById('newPersNom').value.trim();
+  if(!v) return;
+  DB.referentiels.personnes.push({id:uid(),nom:v,telephone:document.getElementById('newPersTel').value.trim(),courriel:document.getElementById('newPersEmail').value.trim()});
+  saveRef();
+}
+function updatePersonne(id,field,val){
+  const p=DB.referentiels.personnes.find(x=>x.id===id);
+  if(p){ p[field]=val; saveRef(); }
+}
+function rmPersonne(id){DB.referentiels.personnes=DB.referentiels.personnes.filter(p=>p.id!==id); saveRef();}
+function addParcelle(){
+  const nom=document.getElementById('newParcNom').value.trim();
+  if(!nom) return;
+  DB.referentiels.parcelles.push({id:uid(),nom,rangs:[]}); saveRef();
+}
+function rmParcelle(id){DB.referentiels.parcelles=DB.referentiels.parcelles.filter(p=>p.id!==id); saveRef();}
+function bulkAddRangs(parcelleId){
+  const p=DB.referentiels.parcelles.find(x=>x.id===parcelleId);
+  if(!p) return;
+  const from=+document.getElementById('bulkFrom_'+parcelleId).value||1;
+  const to=+document.getElementById('bulkTo_'+parcelleId).value||from;
+  const suffix=document.getElementById('bulkSuffix_'+parcelleId).value||'';
+  const cepage=document.getElementById('bulkCepage_'+parcelleId).value.trim();
+  for(let i=Math.min(from,to);i<=Math.max(from,to);i++){
+    p.rangs.push({id:uid(), nom:`${i}${suffix}`, cepage});
+  }
+  saveRef();
+}
+function rmRang(parcelleId,rangId){
+  const p=DB.referentiels.parcelles.find(x=>x.id===parcelleId);
+  if(!p) return;
+  p.rangs=p.rangs.filter(r=>r.id!==rangId);
+  saveRef();
+}
+function addTransportType(){
+  const v=document.getElementById('newTranspNom').value.trim();
+  if(!v) return;
+  DB.referentiels.typesTransport.push({id:uid(),nom:v}); saveRef();
+}
+function updateTransportType(id,val){
+  const t=DB.referentiels.typesTransport.find(x=>x.id===id);
+  if(t){ t.nom=val; saveRef(); }
+}
+function rmTransportType(id){DB.referentiels.typesTransport=DB.referentiels.typesTransport.filter(t=>t.id!==id); saveRef();}
+function addProduit(){
+  const nom=document.getElementById('newProdNom').value.trim();
+  const intervalleJours=+document.getElementById('newProdInt').value||0;
+  if(!nom) return;
+  DB.referentiels.produits.push({id:uid(),nom,intervalleJours}); saveRef();
+}
+function updateProduit(id,field,val){
+  const p=DB.referentiels.produits.find(x=>x.id===id);
+  if(p){ p[field]= field==='intervalleJours'? (+val||0) : val; saveRef(); }
+}
+function rmProduit(id){DB.referentiels.produits=DB.referentiels.produits.filter(p=>p.id!==id); saveRef();}
+function addStade(){
+  const v=document.getElementById('newStadeNom').value.trim();
+  if(!v) return;
+  DB.referentiels.stadesPheno.push(v); saveRef();
+}
+function rmStade(idx){ DB.referentiels.stadesPheno.splice(idx,1); saveRef(); }
+function moveStade(idx,dir){
+  const arr=DB.referentiels.stadesPheno;
+  const j=idx+dir;
+  if(j<0||j>=arr.length) return;
+  [arr[idx],arr[j]]=[arr[j],arr[idx]];
+  saveRef();
+}
+function setDistance(v){DB.referentiels.distanceVignobleKm=+v||0; saveRef();}
+
+/* =========================================================
+   VUE: DONNÉES (export / import)
+========================================================= */
+function viewDonnees(){
+  let html=`<div class="view-sub">VitiOps v${APP_VERSION} — Sauvegarde et export de tes données. Toutes les données restent stockées sur cet appareil (aucun serveur).</div>`;
+  html+=`<div class="card"><h3>Sauvegarde complète</h3>
+    <p class="muted">Exporte toutes les données (référentiels, journées, phyto, observations, échéances) dans un fichier JSON à conserver (ex. sur iCloud Drive).</p>
+    <button class="btn btn-primary btn-block" onclick="exportAll()">Exporter la sauvegarde (JSON)</button>
+    <div class="divider"></div>
+    <p class="muted">Restaurer une sauvegarde précédente. Cela remplace les données actuellement dans l'app.</p>
+    <input type="file" accept="application/json" onchange="importAll(this)">
+  </div>`;
+
+  const yrs=[...new Set(DB.entries.map(e=>yearOf(e.date)))].sort().reverse();
+  html+=`<div class="card"><h3>Export annuel</h3>
+    <div class="row">
+      <div class="field"><label>Année</label>
+        <select id="csvYear">
+          ${yrs.map(y=>`<option>${y}</option>`).join('') || `<option>${new Date().getFullYear()}</option>`}
+        </select>
+      </div>
+      <div class="field"><label>Format</label>
+        <select id="exportFormat">
+          <option value="csv">CSV (tableur)</option>
+          <option value="pdf">PDF</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-block" onclick="exportYear()">Exporter les journées de l'année</button>
+  </div>`;
+  return html;
+}
+function downloadFile(filename, content, mime){
+  const blob=new Blob([content],{type:mime});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function exportAll(){
+  const payload={exportedAt:new Date().toISOString(), app:APP_NAME, version:APP_VERSION, ...DB};
+  downloadFile(`${APP_NAME}-sauvegarde-${todayISO()}.json`, JSON.stringify(payload,null,2), 'application/json');
+  showToast('Sauvegarde exportée');
+}
+function importAll(input){
+  const file=input.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      DB.referentiels=data.referentiels||defaultReferentiels();
+      DB.entries=data.entries||[];
+      DB.observations=data.observations||[];
+      DB.traitements=data.traitements||[];
+      DB.echeances=data.echeances||[];
+      await Promise.all(['referentiels','entries','observations','traitements','echeances'].map(save));
+      showToast('Sauvegarde restaurée');
+      jourDraft=null;
+      renderView();
+    }catch(err){
+      showToast('Fichier invalide');
+    }
+  };
+  reader.readAsText(file);
+}
+function exportYear(){
+  const fmt=document.getElementById('exportFormat').value;
+  if(fmt==='pdf') exportPdfYear(); else exportCsvYear();
+}
+function exportCsvYear(){
+  const year=document.getElementById('csvYear').value;
+  const ref=DB.referentiels;
+  const rows=[['Date','Tache','Categorie','Heures','Parcelle','Rangs']];
+  DB.entries.filter(e=>yearOf(e.date)===year).forEach(e=>{
+    e.taches.forEach(l=>{
+      const nom=tacheDisplayName(l,ref);
+      const cat=tacheCategorie(l,ref);
+      if(l.sections && l.sections.length){
+        l.sections.forEach(s=>{
+          const p=ref.parcelles.find(x=>x.id===s.parcelleId);
+          rows.push([e.date, nom, cat, l.heures, p?.nom||'', p?rangsLabel(p,s.rangs):'']);
+        });
+      } else {
+        rows.push([e.date, nom, cat, l.heures, '', '']);
+      }
+    });
+  });
+  const csv=rows.map(r=>r.map(v=>`"${(v??'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  downloadFile(`${APP_NAME}-${year}.csv`, csv, 'text/csv');
+  showToast('Export CSV prêt');
+}
+let __jsPdfLoading=null;
+function ensureJsPDF(){
+  if(window.jspdf) return Promise.resolve();
+  if(__jsPdfLoading) return __jsPdfLoading;
+  __jsPdfLoading = new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload=resolve;
+    s.onerror=reject;
+    document.head.appendChild(s);
+  });
+  return __jsPdfLoading;
+}
+async function exportPdfYear(){
+  const year=document.getElementById('csvYear').value;
+  const ref=DB.referentiels;
+  try{ await ensureJsPDF(); }catch(e){ showToast('Impossible de charger le générateur PDF (connexion requise)'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc=new jsPDF();
+  let y=16;
+  const lineH=6;
+  const pageH=285;
+  function line(txt, opts={}){
+    if(y>pageH){ doc.addPage(); y=16; }
+    doc.setFontSize(opts.size||10);
+    doc.setFont(undefined, opts.bold?'bold':'normal');
+    doc.text(txt, 14, y);
+    y+=opts.gap||lineH;
+  }
+  line(`${APP_NAME} — Année ${year}`, {size:15, bold:true, gap:9});
+
+  line('Détail des tâches par jour', {size:12, bold:true, gap:7});
+  DB.entries.filter(e=>yearOf(e.date)===year).sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{
+    e.taches.forEach(l=>{
+      const nom=tacheDisplayName(l,ref);
+      const secTxt=(l.sections||[]).map(s=>{
+        const p=ref.parcelles.find(x=>x.id===s.parcelleId);
+        return p? `${p.nom}(${rangsLabel(p,s.rangs)})` : '';
+      }).filter(Boolean).join(' + ');
+      line(`${fmtDate(e.date)} · ${nom} · ${l.heures}h${secTxt?' · '+secTxt:''}`);
+    });
+  });
+
+  y+=4;
+  line('Traitements phytosanitaires', {size:12, bold:true, gap:7});
+  DB.traitements.filter(t=>yearOf(t.date)===year).sort((a,b)=>a.date.localeCompare(b.date)).forEach(t=>{
+    const p=ref.parcelles.find(x=>x.id===t.parcelleId);
+    const pr=ref.produits.find(x=>x.id===t.produitId);
+    line(`${fmtDate(t.date)} · ${p?.nom||'—'} · ${pr?.nom||'—'} · dose ${t.dose||'—'}${t.unite||''}/ha · qté ${t.qteProduit||'—'}${t.unite||''}`);
+  });
+
+  y+=4;
+  line('Kilométrage et transport', {size:12, bold:true, gap:7});
+  const yearEntries = DB.entries.filter(e=>yearOf(e.date)===year);
+  const totalKm = yearEntries.reduce((s,e)=> s + (e.auVignoble?ref.distanceVignobleKm:0) + e.transport.reduce((s2,l)=>s2+(+l.km||0),0), 0);
+  const totalTh = yearEntries.reduce((s,e)=> s + transportHoursForEntry(e), 0);
+  line(`Total kilométrage ${year} : ${totalKm} km`);
+  line(`Total temps de transport (indicatif) ${year} : ${totalTh.toFixed(1)} h`);
+
+  doc.save(`${APP_NAME}-${year}.pdf`);
+  showToast('Export PDF prêt');
+}
+
+/* =========================================================
+   INIT
+========================================================= */
+(async function init(){
+  document.getElementById('app').innerHTML = `<div style="padding:40px;text-align:center;color:#5B6355;">Chargement…</div>`;
+  await loadDB();
+  render();
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
