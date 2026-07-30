@@ -137,7 +137,7 @@
 --------------------------------------------------------- */
 
 const APP_NAME='VitiOps';
-const APP_VERSION='1.1';
+const APP_VERSION='1.1.1';
 const VIGNOBLE_NOM='Vignoble La Grappe';
 const TRANSPORT_VIGNOBLE_MIN = 80;
 const TRANSPORT_VIGNOBLE_H = TRANSPORT_VIGNOBLE_MIN/60;
@@ -654,26 +654,31 @@ async function saveJour(){
 ========================================================= */
 let phytoDraft=null;
 let phytoAnnee=null;
-function newPhytoDraft(){return {id:null,date:todayISO(),parcelleId:'',rangs:[],produitId:'',unite:'L',dose:'',taux:'',qteProduit:'',volumeEau:'',vitesse:'',pression:'',note:''};}
-function phytoSetParcelle(val){
-  phytoDraft.parcelleId=val;
+function newPhytoDraft(keepDate){
+  return {id:null,date:keepDate||todayISO(),sections:[{parcelleId:'',rangs:[]}],produitId:'',unite:'L',dose:'',taux:'',qteProduit:'',volumeEau:'',vitesse:'',pression:'',note:''};
+}
+function phytoAddSection(){ phytoDraft.sections.push({parcelleId:'',rangs:[]}); renderView(); }
+function phytoRmSection(si){ phytoDraft.sections.splice(si,1); renderView(); }
+function phytoSetSectionParcelle(si,val){
   const p=DB.referentiels.parcelles.find(x=>x.id===val);
-  phytoDraft.rangs = p? p.rangs.map(r=>r.id) : [];
+  phytoDraft.sections[si]={parcelleId:val, rangs: p? p.rangs.map(r=>r.id) : []};
   renderView();
 }
-function phytoToggleRang(rangId){
-  const idx=phytoDraft.rangs.indexOf(rangId);
-  if(idx>=0) phytoDraft.rangs.splice(idx,1); else phytoDraft.rangs.push(rangId);
+function phytoToggleRang(si,rangId){
+  const arr=phytoDraft.sections[si].rangs;
+  const idx=arr.indexOf(rangId);
+  if(idx>=0) arr.splice(idx,1); else arr.push(rangId);
   renderView();
 }
-function phytoToggleSection(rangIds,checked){
-  if(checked){ rangIds.forEach(id=>{ if(!phytoDraft.rangs.includes(id)) phytoDraft.rangs.push(id); }); }
-  else { phytoDraft.rangs = phytoDraft.rangs.filter(id=>!rangIds.includes(id)); }
+function phytoToggleGroupe(si,rangIds,checked){
+  const sec=phytoDraft.sections[si];
+  if(checked){ rangIds.forEach(id=>{ if(!sec.rangs.includes(id)) sec.rangs.push(id); }); }
+  else { sec.rangs = sec.rangs.filter(id=>!rangIds.includes(id)); }
   renderView();
 }
-function phytoRangPicker(parcelle, selected){
+function phytoRangPicker(si, parcelle, selected){
   const groups=rangGroups(parcelle);
-  let html=`<div class="field"><label>Nombre de rangs traités : ${selected.length} / ${parcelle.rangs.length} (calculé automatiquement selon les sections cochées)</label>`;
+  let html=`<div class="field"><label>Rangs de cette parcelle : ${selected.length} / ${parcelle.rangs.length}</label>`;
   groups.forEach(g=>{
     const ids=g.rangs.map(r=>r.id);
     const allDone=ids.every(id=>selected.includes(id));
@@ -681,47 +686,61 @@ function phytoRangPicker(parcelle, selected){
       <div class="cepage-head">
         <span class="name">${esc(g.cepage||'Sans cépage')}</span>
         <label class="checkline" style="margin:0;">
-          <input type="checkbox" ${allDone?'checked':''} onchange='phytoToggleSection(${JSON.stringify(ids)}, this.checked)'>
+          <input type="checkbox" ${allDone?'checked':''} onchange='phytoToggleGroupe(${si}, ${JSON.stringify(ids)}, this.checked)'>
           Toute la section
         </label>
       </div>
       <div class="row-grid">
-        ${g.rangs.map(r=>`<div class="row-cell ${selected.includes(r.id)?'done':''}" onclick="phytoToggleRang('${r.id}')">${esc(r.nom)}</div>`).join('')}
+        ${g.rangs.map(r=>`<div class="row-cell ${selected.includes(r.id)?'done':''}" onclick="phytoToggleRang(${si}, '${r.id}')">${esc(r.nom)}</div>`).join('')}
       </div>
     </div>`;
   });
   html+=`</div>`;
   return html;
 }
+function phytoSectionBlock(si, section, ref){
+  const parcelle = ref.parcelles.find(p=>p.id===section.parcelleId);
+  let html = `<div class="sub-line-item">
+    ${phytoDraft.sections.length>1? `<button class="rm" onclick="phytoRmSection(${si})">✕</button>` : ''}
+    <div class="field">
+      <label>Parcelle</label>
+      <select onchange="phytoSetSectionParcelle(${si},this.value)">
+        <option value="">— choisir —</option>
+        ${ref.parcelles.map(p=>`<option value="${p.id}" ${p.id===section.parcelleId?'selected':''}>${esc(p.nom)} (${p.rangs.length} rangs)</option>`).join('')}
+      </select>
+    </div>
+    ${parcelle? phytoRangPicker(si, parcelle, section.rangs||[]) : ''}
+  </div>`;
+  return html;
+}
 function viewPhyto(){
   if(!phytoDraft) phytoDraft=newPhytoDraft();
   const ref=DB.referentiels;
   const d=phytoDraft;
-  const parcelle=ref.parcelles.find(p=>p.id===d.parcelleId);
   const produit=ref.produits.find(p=>p.id===d.produitId);
+  const totalRangsChoisis = d.sections.reduce((s,sec)=>s+(sec.rangs?sec.rangs.length:0),0);
 
-  let alerte='';
-  if(produit && d.parcelleId){
-    const last=[...DB.traitements].filter(t=>t.produitId===d.produitId && t.parcelleId===d.parcelleId).sort((a,b)=>b.date.localeCompare(a.date))[0];
-    if(last && produit.intervalleJours){
-      const next=new Date(last.date); next.setDate(next.getDate()+ (+produit.intervalleJours));
-      alerte = `<div class="muted">Dernière application sur cette parcelle : ${fmtDate(last.date)} — prochaine possible dès le ${fmtDate(next.toISOString().slice(0,10))}.</div>`;
-    }
+  let alertes=[];
+  if(produit){
+    d.sections.filter(s=>s.parcelleId).forEach(s=>{
+      const p=ref.parcelles.find(x=>x.id===s.parcelleId);
+      const last=[...DB.traitements].filter(t=>t.produitId===d.produitId && (t.sections||[]).some(ts=>ts.parcelleId===s.parcelleId)).sort((a,b)=>b.date.localeCompare(a.date))[0];
+      if(last && produit.intervalleJours){
+        const next=new Date(last.date); next.setDate(next.getDate()+ (+produit.intervalleJours));
+        alertes.push(`${p?.nom||'—'} : dernière application ${fmtDate(last.date)} — prochaine possible dès le ${fmtDate(next.toISOString().slice(0,10))}.`);
+      }
+    });
   }
 
-  let html=`<div class="view-sub">Registre des traitements phytosanitaires, parcelle par parcelle.</div>`;
+  let html=`<div class="view-sub">Registre des traitements phytosanitaires — combine plusieurs parcelles et sections dans un même traitement.</div>`;
   html+=`<div class="card"><h3>Nouveau traitement</h3>
     <div class="row">
       <div class="field"><label>Date</label><input type="date" value="${d.date}" onchange="phytoDraft.date=this.value"></div>
-      <div class="field">
-        <label>Parcelle traitée</label>
-        <select onchange="phytoSetParcelle(this.value)">
-          <option value="">— choisir —</option>
-          ${ref.parcelles.map(p=>`<option value="${p.id}" ${p.id===d.parcelleId?'selected':''}>${esc(p.nom)}</option>`).join('')}
-        </select>
-      </div>
     </div>
-    ${parcelle? phytoRangPicker(parcelle, d.rangs) : ''}
+    <div class="muted" style="margin-bottom:6px;">Ajoute une parcelle par section traitée (ex : Somerset en parcelle A et B en même temps).</div>
+    ${d.sections.map((s,si)=>phytoSectionBlock(si,s,ref)).join('')}
+    <button class="btn btn-ghost btn-block" onclick="phytoAddSection()">+ Ajouter une parcelle</button>
+    <div class="note-box" style="margin-top:10px;">Nombre total de rangs traités : <b>${totalRangsChoisis}</b> (calculé automatiquement)</div>
     <div class="row" style="margin-top:8px;">
       <div class="field">
         <label>Produit appliqué</label>
@@ -738,7 +757,7 @@ function viewPhyto(){
         </select>
       </div>
     </div>
-    ${alerte}
+    ${alertes.map(a=>`<div class="muted">${esc(a)}</div>`).join('')}
     <div class="row" style="margin-top:8px;">
       <div class="field"><label>Dose (${d.unite}/ha)</label><input type="number" step="any" min="0" value="${d.dose}" onchange="phytoDraft.dose=this.value"></div>
       <div class="field"><label>Taux d'application (L/ha)</label><input type="number" step="any" min="0" value="${d.taux}" onchange="phytoDraft.taux=this.value"></div>
@@ -753,6 +772,7 @@ function viewPhyto(){
     </div>
     <div class="field"><label>Note (facultatif)</label><textarea onchange="phytoDraft.note=this.value">${esc(d.note)}</textarea></div>
     <button class="btn btn-primary btn-block" onclick="savePhyto()">Enregistrer le traitement</button>
+    <div class="muted" style="margin-top:8px;">Un autre traitement le même jour (autre produit ou autres sections) ? Enregistre celui-ci, le formulaire se réinitialise avec la même date pour continuer.</div>
   </div>`;
 
   const years=[...new Set(DB.traitements.map(t=>yearOf(t.date)))].sort().reverse();
@@ -797,18 +817,23 @@ function viewPhyto(){
     html+=`<div class="empty"><div class="ic">⚗</div>Aucun traitement enregistré.</div>`;
   } else {
     hist.forEach(t=>{
-      const p=ref.parcelles.find(x=>x.id===t.parcelleId);
       const pr=ref.produits.find(x=>x.id===t.produitId);
       const seq = yearOf(t.date)===phytoAnnee ? seqMap[t.id] : null;
-      const rl = p? rangsLabel(p, t.rangs||[]) : '';
-      const partiel = p && t.rangs && t.rangs.length < p.rangs.length;
+      const secs=(t.sections||[]);
+      const totalR=secs.reduce((s,sec)=>s+(sec.rangs?sec.rangs.length:0),0);
+      const secLabels=secs.map(sec=>{
+        const p=ref.parcelles.find(x=>x.id===sec.parcelleId);
+        if(!p) return '';
+        const partiel=sec.rangs.length<p.rangs.length;
+        return `${p.nom} (${sec.rangs.length}/${p.rangs.length}${partiel?' — partiel':''}) : ${rangsLabel(p,sec.rangs)}`;
+      }).filter(Boolean);
       html+=`<div class="card">
         <div class="row" style="align-items:center;justify-content:space-between;">
-          <div><b>${fmtDate(t.date)}</b> · ${esc(p?.nom||'—')} <span class="muted">(${t.rangs?.length||p?.rangs?.length||'?'}${partiel?' / '+p.rangs.length:''} rangs${partiel?' — partiel':''})</span></div>
+          <div><b>${fmtDate(t.date)}</b> <span class="muted">(${totalR} rangs au total)</span></div>
           <button class="btn btn-danger btn-sm" onclick="delPhyto('${t.id}')">Suppr.</button>
         </div>
         <div class="muted">Produit : <b>${esc(pr?.nom||'—')}${seq?` #${seq}`:''}</b></div>
-        ${partiel? `<div class="muted">Rangs : ${esc(rl)}</div>`:''}
+        ${secLabels.map(l=>`<div class="muted">${esc(l)}</div>`).join('')}
         <div class="muted">Dose ${t.dose||'—'} ${t.unite||''}/ha · Taux ${t.taux||'—'} L/ha · Qté ${t.qteProduit||'—'} ${t.unite||''} · Eau ${t.volumeEau||'—'} L · Vitesse ${esc(t.vitesse)||'—'} · Pression ${t.pression||'—'} Bar</div>
         ${t.note?`<div class="muted">Note : ${esc(t.note)}</div>`:''}
       </div>`;
@@ -818,13 +843,15 @@ function viewPhyto(){
 }
 async function savePhyto(){
   const d=phytoDraft;
-  if(!d.parcelleId || !d.produitId){showToast('Choisis une parcelle et un produit'); return;}
-  if(!d.rangs || !d.rangs.length){showToast('Sélectionne au moins un rang'); return;}
+  const sections=(d.sections||[]).filter(s=>s.parcelleId && s.rangs && s.rangs.length).map(s=>({parcelleId:s.parcelleId, rangs:s.rangs}));
+  if(!sections.length){showToast('Choisis au moins une parcelle et des rangs'); return;}
+  if(!d.produitId){showToast('Choisis un produit'); return;}
   d.id=uid();
+  d.sections=sections;
   DB.traitements.push(d);
   await save('traitements');
   showToast('Traitement enregistré');
-  phytoDraft=newPhytoDraft();
+  phytoDraft=newPhytoDraft(d.date);
   renderView();
 }
 async function delPhyto(id){
@@ -1705,9 +1732,12 @@ async function exportPdfYear(){
   y+=4;
   line('Traitements phytosanitaires', {size:12, bold:true, gap:7});
   DB.traitements.filter(t=>yearOf(t.date)===year).sort((a,b)=>a.date.localeCompare(b.date)).forEach(t=>{
-    const p=ref.parcelles.find(x=>x.id===t.parcelleId);
     const pr=ref.produits.find(x=>x.id===t.produitId);
-    line(`${fmtDate(t.date)} · ${p?.nom||'—'} · ${pr?.nom||'—'} · dose ${t.dose||'—'}${t.unite||''}/ha · qté ${t.qteProduit||'—'}${t.unite||''}`);
+    const secTxt=(t.sections||[]).map(s=>{
+      const p=ref.parcelles.find(x=>x.id===s.parcelleId);
+      return p? `${p.nom}(${s.rangs.length}r)` : '';
+    }).filter(Boolean).join(' + ');
+    line(`${fmtDate(t.date)} · ${secTxt||'—'} · ${pr?.nom||'—'} · dose ${t.dose||'—'}${t.unite||''}/ha · qté ${t.qteProduit||'—'}${t.unite||''}`);
   });
 
   y+=4;
